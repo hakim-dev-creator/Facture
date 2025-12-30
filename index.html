@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ElectricPro - النسخة الاحترافية المعتمدة</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root { --p: #2c3e50; --a: #f1c40f; --s: #27ae60; --w: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f3f5; margin: 0; padding: 10px; }
+        
+        .glow-title { 
+            color: var(--w); font-size: 28px; font-weight: bold; text-align: center; margin: 0;
+            text-shadow: 0 0 15px var(--a), 0 0 30px var(--a);
+            animation: pulse-glow 2s infinite alternate;
+        }
+        @keyframes pulse-glow { from { opacity: 0.8; } to { opacity: 1; text-shadow: 0 0 25px var(--a), 0 0 45px #f39c12; } }
+
+        .container { max-width: 500px; margin: auto; background: var(--w); border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: var(--p); padding: 20px; border-bottom: 4px solid var(--a); }
+        .tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #eee; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; cursor: pointer; color: #7f8c8d; }
+        .tab-btn.active { color: var(--p); border-bottom: 3px solid var(--a); background: white; }
+        
+        .content { padding: 15px; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: var(--p); }
+        input, select { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--a); background: #fffdf5; }
+        
+        .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #eee; }
+        
+        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-add { background: var(--s); color: white; margin-top: 5px; }
+        .btn-pdf { background: var(--p); color: white; margin-top: 25px; }
+
+        .glow-box { 
+            margin-top: 20px; padding: 20px; background: #fffbe6; border: 3px solid var(--a); 
+            border-radius: 15px; text-align: center; box-shadow: 0 0 20px rgba(241, 196, 15, 0.4); 
+        }
+        .glow-box h2 { margin: 5px 0 0; color: #d35400; font-size: 26px; font-weight: bold; }
+
+        #pdf-export { width: 800px; padding: 50px; background: white; position: absolute; left: -9999px; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .pdf-table th { background: var(--p); color: white; padding: 15px; }
+        .pdf-table td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header"><h1 class="glow-title">ElectricPro</h1></div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-c" onclick="switchTab('calc')">الحاسبة</button>
+        <button class="tab-btn" id="tab-v" onclick="switchTab('serv')">الخدمات</button>
+        <button class="tab-btn" id="tab-s" onclick="switchTab('sett')">الإعدادات</button>
+    </div>
+
+    <div id="sec-calc" class="content">
+        <div class="input-group"><label>اسم الزبون:</label><input type="text" id="cliName" onclick="this.select()"></div>
+        <div id="items-container">
+            <div class="item-row">
+                <select class="row-desc" onchange="applyService(this)"></select>
+                <input type="number" placeholder="كمية" class="row-qty" oninput="doCalc()" onclick="this.select()">
+                <input type="number" placeholder="سعر" class="row-prc" oninput="doCalc()" onclick="this.select()">
+            </div>
+        </div>
+        <button class="btn btn-add" onclick="addNewRow()">+ إضافة بند جديد</button>
+        
+        <div class="input-group" style="margin-top:20px"><label>الدفعات المقدمة (د.ج):</label><input type="number" id="paidIn" value="0" oninput="doCalc()" onclick="this.select()"></div>
+
+        <div class="glow-box">
+            <small>الصافي المطلوب دفعه:</small>
+            <h2 id="net-total">0.00 د.ج</h2>
+        </div>
+        <button class="btn btn-pdf" id="pdfBtn" onclick="generatePDF()">تصدير فاتورة PDF الشعاعية</button>
+    </div>
+
+    <div id="sec-serv" class="content" style="display:none">
+        <div id="master-services"></div>
+        <button class="btn btn-add" onclick="addMasterRow('', '')">+ خدمة جديدة</button>
+        <button class="btn btn-pdf" onclick="saveMaster()">حفظ الخدمات</button>
+    </div>
+
+    <div id="sec-sett" class="content" style="display:none">
+        <div class="input-group"><label>الهاتف:</label><input type="text" id="myPh" onchange="svSettings()" onclick="this.select()"></div>
+        <div class="input-group"><label>العنوان:</label><input type="text" id="myAd" onchange="svSettings()" onclick="this.select()"></div>
+    </div>
+</div>
+
+<div id="pdf-export" dir="rtl">
+    <div style="text-align: center; border-bottom: 5px solid #f1c40f; padding-bottom: 20px; margin-bottom: 30px;">
+        <h1 style="font-size: 55px; color: #2c3e50; margin: 0; text-shadow: 0 0 10px #f1c40f;">ElectricPro</h1>
+        <p style="font-size: 20px;">مؤسسة الكهرباء العامة | هاتف: <span id="p-ph"></span></p>
+        <p style="font-size: 18px;">العنوان: <span id="p-ad"></span></p>
+    </div>
+    <p style="font-size: 24px; margin-bottom: 25px;"><strong>السيد:</strong> <span id="p-cli"></span></p>
+    <table class="pdf-table">
+        <thead><tr><th>بيان الأشغال</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead>
+        <tbody id="p-table-body"></tbody>
+    </table>
+    <div style="margin-top: 40px; text-align: left; padding-left: 20px;">
+        <p style="font-size: 22px;">إجمالي الأشغال الكلي: <span id="p-sub"></span> د.ج</p>
+        <p style="font-size: 22px;">الدفعات المقدمة: <span id="p-paid"></span> د.ج</p>
+        <div class="glow-box" style="display: inline-block; min-width: 380px; float: left; background: #fffbe6 !important;">
+            <h2 id="p-net" style="margin: 0; font-size: 36px; color: #d35400;"></h2>
+        </div>
+    </div>
+</div>
+
+<script>
+    let services = JSON.parse(localStorage.getItem('pro_services') || '[]');
+
+    function switchTab(t) {
+        document.getElementById('sec-calc').style.display = t=='calc'?'block':'none';
+        document.getElementById('sec-serv').style.display = t=='serv'?'block':'none';
+        document.getElementById('sec-sett').style.display = t=='sett'?'block':'none';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.onclick.toString().includes(t)));
+        if(t=='calc') refreshDropdowns();
+    }
+
+    function addMasterRow(n, p) {
+        let d = document.createElement('div'); d.style.display="flex"; d.style.gap="5px"; d.style.marginBottom="5px";
+        d.innerHTML = `<input type="text" class="m-n" value="${n}" onclick="this.select()"> 
+                       <input type="number" class="m-p" value="${p}" onclick="this.select()">
+                       <button onclick="this.parentElement.remove()" style="background:red; color:white; border:none; padding:10px; border-radius:8px">X</button>`;
+        document.getElementById('master-services').appendChild(d);
+    }
+
+    function saveMaster() {
+        let list = [];
+        document.querySelectorAll('#master-services > div').forEach(r => {
+            let n = r.querySelector('.m-n').value, p = r.querySelector('.m-p').value;
+            if(n) list.push({n, p});
+        });
+        localStorage.setItem('pro_services', JSON.stringify(list));
+        services = list;
+        alert("تم حفظ قائمة الخدمات");
+        refreshDropdowns();
+    }
+
+    function refreshDropdowns() {
+        let opts = '<option value="">اختر خدمة...</option>' + services.map(s => `<option value="${s.n}" data-p="${s.p}">${s.n}</option>`).join('');
+        document.querySelectorAll('.row-desc').forEach(sel => { let v = sel.value; sel.innerHTML = opts; sel.value = v; });
+    }
+
+    function applyService(sel) {
+        let p = sel.options[sel.selectedIndex].dataset.p;
+        if(p) {
+            let row = sel.parentElement;
+            row.querySelector('.row-prc').value = p;
+            doCalc();
+            row.querySelector('.row-qty').focus();
+            row.querySelector('.row-qty').select();
+        }
+    }
+
+    function addNewRow() {
+        let d = document.createElement('div'); d.className = 'item-row';
+        d.innerHTML = `<select class="row-desc" onchange="applyService(this)"></select>
+                       <input type="number" placeholder="كمية" class="row-qty" oninput="doCalc()" onclick="this.select()">
+                       <input type="number" placeholder="سعر" class="row-prc" oninput="doCalc()" onclick="this.select()">`;
+        document.getElementById('items-container').appendChild(d);
+        refreshDropdowns();
+    }
+
+    function doCalc() {
+        let sub = 0;
+        document.querySelectorAll('.item-row').forEach(r => {
+            sub += (r.querySelector('.row-qty').value * r.querySelector('.row-prc').value) || 0;
+        });
+        let p = document.getElementById('paidIn').value || 0;
+        let net = sub - p;
+        document.getElementById('net-total').innerText = net.toLocaleString() + " د.ج";
+        return {sub, p, net};
+    }
+
+    function svSettings() {
+        localStorage.setItem('pro_ph', document.getElementById('myPh').value);
+        localStorage.setItem('pro_ad', document.getElementById('myAd').value);
+    }
+
+    window.onload = () => {
+        document.getElementById('myPh').value = localStorage.getItem('pro_ph') || '';
+        document.getElementById('myAd').value = localStorage.getItem('pro_ad') || '';
+        services.forEach(s => addMasterRow(s.n, s.p));
+        refreshDropdowns();
+    };
+
+    async function generatePDF() {
+        const btn = document.getElementById('pdfBtn'); btn.innerText = "جاري الحفظ...";
+        document.getElementById('p-ph').innerText = document.getElementById('myPh').value;
+        document.getElementById('p-ad').innerText = document.getElementById('myAd').value;
+        document.getElementById('p-cli').innerText = document.getElementById('cliName').value || '---';
+        let body = '';
+        document.querySelectorAll('.item-row').forEach(r => {
+            let d = r.querySelector('.row-desc').value, q = r.querySelector('.row-qty').value || 0, p = r.querySelector('.row-prc').value || 0;
+            if(d) body += `<tr><td>${d}</td><td>${q}</td><td>${p}</td><td>${(q*p).toFixed(2)}</td></tr>`;
+        });
+        let res = doCalc();
+        document.getElementById('p-table-body').innerHTML = body;
+        document.getElementById('p-sub').innerText = res.sub.toFixed(2);
+        document.getElementById('p-paid').innerText = res.p;
+        document.getElementById('p-net').innerText = "الصافي المطلوب: " + res.net.toFixed(2) + " د.ج";
+
+        const canvas = await html2canvas(document.getElementById('pdf-export'), { scale: 3 });
+        const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, (canvas.height * 210) / canvas.width);
+        pdf.save(`ElectricPro_${document.getElementById('cliName').value}.pdf`);
+        btn.innerText = "تصدير فاتورة PDF الشعاعية";
+    }
+</script>
+</body>
+</html>
