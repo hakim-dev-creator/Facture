@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <link rel="apple-touch-icon" href="./finalicon.png">
 <link rel="icon" type="image/png" href="./finalicon.png">
     <title>تطبيق محاسبة الكهرباء | ProElec V10</title>
@@ -24,6 +24,10 @@
             --shadow-dark: 9px 9px 16px rgba(163,177,198, 0.6);
             --inner-shadow: inset 6px 6px 10px 0 rgba(163,177,198, 0.7), inset -6px -6px 10px 0 rgba(255,255,255, 0.8);
         }
+#invoice-card {
+    touch-action: manipulation;
+    overflow: auto;
+}
 
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
 
