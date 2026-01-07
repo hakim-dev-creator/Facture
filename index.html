@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProElec V27 - WhatsApp Integration</title>
+    <title>ProElec V28 - Fixed Backup</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -50,7 +50,6 @@
         .fab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; display: flex; gap: 15px; z-index: 100; background: rgba(224, 229, 236, 0.9); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.3); }
         .fab-main { flex: 2; background: linear-gradient(135deg, var(--primary), #2563eb); color: white !important; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); }
         .fab-action { flex: 1; background: #1f2937; color: white !important; }
-        /* WhatsApp Button Style */
         .fab-whatsapp { flex: 1; color: var(--whatsapp) !important; font-size: 1.5rem; }
 
         /* Modals */
@@ -63,7 +62,6 @@
 
         /* Print Area */
         #printable-area { display: none; }
-        
         @media print {
             .app-container, .fab-bar, .modal-overlay { display: none !important; }
             body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
@@ -72,9 +70,7 @@
             .invoice-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 20px; }
             .company-name { font-size: 2.5rem; font-weight: 800; color: var(--primary) !important; margin-bottom: 5px; }
             .company-details { font-size: 0.9rem; color: #555; margin-bottom: 20px; }
-            
             .invoice-meta { display: flex; justify-content: space-between; background: #f8f9fa !important; padding: 10px 15px; border-radius: 8px; border: 1px solid #eee; font-size: 0.9rem; margin-bottom: 20px; }
-
             table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 11pt; }
             th { background-color: #f3f4f6 !important; color: #111 !important; padding: 12px; border: 1px solid #ddd; }
             td { border: 1px solid #ddd; padding: 10px; color: #333; }
@@ -160,89 +156,46 @@
         </div>
 
         <div class="fab-bar">
-            <button class="neu-btn fab-main" onclick="saveData()">
-                <i class="fas fa-save"></i> حفظ
-            </button>
-            
-            <button class="neu-btn fab-action btn-red" style="width:50px" onclick="deleteClient()">
-                <i class="fas fa-trash-alt"></i>
-            </button>
-            
-            <button class="neu-btn fab-whatsapp" onclick="shareWhatsapp()" title="إرسال عبر واتساب">
-                <i class="fab fa-whatsapp"></i>
-            </button>
-
-            <button class="neu-btn fab-action" style="width:60px" onclick="forcePrint()">
-                <i class="fas fa-print"></i>
-            </button>
+            <button class="neu-btn fab-main" onclick="saveData()"><i class="fas fa-save"></i> حفظ</button>
+            <button class="neu-btn fab-action btn-red" onclick="deleteClient()"><i class="fas fa-trash-alt"></i></button>
+            <button class="neu-btn fab-whatsapp" onclick="shareWhatsapp()"><i class="fab fa-whatsapp"></i></button>
+            <button class="neu-btn fab-action" onclick="forcePrint()"><i class="fas fa-print"></i></button>
         </div>
     </div>
 
-    <div id="pinModal" class="modal-overlay">
-        <div class="modal-content" style="text-align:center;">
-            <h3>لوحة المدير</h3>
-            <p>أدخل الرمز السري</p>
-            <input type="password" id="adminPinInput" class="neu-input" placeholder="****" style="text-align:center;font-size:1.5rem;letter-spacing:5px;">
-            <div style="display:flex;gap:10px;margin-top:15px;"><button class="neu-btn btn-green" onclick="checkAdminPin()" style="flex:1">دخول</button><button class="neu-btn btn-red" onclick="closeModal('pinModal')" style="flex:1">إلغاء</button></div>
-        </div>
-    </div>
-
-    <div id="companySettingsModal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>إعدادات المؤسسة</h3>
-            <div class="setting-group"><label>اسم المؤسسة</label><input type="text" id="confAppName" class="neu-input"></div>
-            <div class="setting-group"><label>الوصف</label><input type="text" id="confAppDesc" class="neu-input"></div>
-            <div class="setting-group"><label>رقم الهاتف</label><input type="text" id="confAppPhone" class="neu-input"></div>
-            <div class="setting-group"><label>العنوان</label><input type="text" id="confAppAddr" class="neu-input"></div>
-            <div class="setting-group" style="border-top:1px solid #ccc;padding-top:15px;"><label style="color:var(--danger)">تغيير الرمز السري</label><input type="number" id="confAppPin" class="neu-input" placeholder="جديد"></div>
-            <div style="display:flex;gap:10px;margin-top:20px;"><button class="neu-btn btn-green" onclick="saveCompanyConfig()" style="flex:2">حفظ</button><button class="neu-btn btn-red" onclick="closeModal('companySettingsModal')" style="flex:1">إلغاء</button></div>
-        </div>
-    </div>
-
+    <div id="pinModal" class="modal-overlay"><div class="modal-content" style="text-align:center;"><h3>لوحة المدير</h3><p>أدخل الرمز السري</p><input type="password" id="adminPinInput" class="neu-input" placeholder="****" style="text-align:center;font-size:1.5rem;letter-spacing:5px;"><div style="display:flex;gap:10px;margin-top:15px;"><button class="neu-btn btn-green" onclick="checkAdminPin()" style="flex:1">دخول</button><button class="neu-btn btn-red" onclick="closeModal('pinModal')" style="flex:1">إلغاء</button></div></div></div>
+    <div id="companySettingsModal" class="modal-overlay"><div class="modal-content"><h3>إعدادات المؤسسة</h3><div class="setting-group"><label>اسم المؤسسة</label><input type="text" id="confAppName" class="neu-input"></div><div class="setting-group"><label>الوصف</label><input type="text" id="confAppDesc" class="neu-input"></div><div class="setting-group"><label>رقم الهاتف</label><input type="text" id="confAppPhone" class="neu-input"></div><div class="setting-group"><label>العنوان</label><input type="text" id="confAppAddr" class="neu-input"></div><div class="setting-group" style="border-top:1px solid #ccc;padding-top:15px;"><label style="color:var(--danger)">تغيير الرمز السري</label><input type="number" id="confAppPin" class="neu-input" placeholder="جديد"></div><div style="display:flex;gap:10px;margin-top:20px;"><button class="neu-btn btn-green" onclick="saveCompanyConfig()" style="flex:2">حفظ</button><button class="neu-btn btn-red" onclick="closeModal('companySettingsModal')" style="flex:1">إلغاء</button></div></div></div>
     <div id="priceSettingsModal" class="modal-overlay"><div class="modal-content"><h3>أسعار الخدمات</h3><div id="settingsInputs"></div><div style="display:flex;gap:10px;margin-top:20px;"><button class="neu-btn btn-green" onclick="savePrices()" style="flex:1">حفظ</button><button class="neu-btn btn-red" onclick="closeModal('priceSettingsModal')" style="flex:1">إلغاء</button></div></div></div>
 
     <div id="printable-area">
-        <div class="invoice-header">
-            <div class="company-name" id="p_compName"></div>
-            <div class="company-details">
-                <div id="p_compDesc"></div>
-                <div id="p_compPhone" style="margin-top:5px;"></div>
-                <div id="p_compAddr"></div>
-            </div>
-        </div>
-        <div class="invoice-meta">
-            <div><strong>الزبون:</strong> <span id="p_clientName"></span></div>
-            <div><strong>التاريخ:</strong> <span id="p_date"></span> | <strong>رقم:</strong> <span id="p_ref"></span></div>
-        </div>
+        <div class="invoice-header"><div class="company-name" id="p_compName"></div><div class="company-details"><div id="p_compDesc"></div><div id="p_compPhone" style="margin-top:5px;"></div><div id="p_compAddr"></div></div></div>
+        <div class="invoice-meta"><div><strong>الزبون:</strong> <span id="p_clientName"></span></div><div><strong>التاريخ:</strong> <span id="p_date"></span> | <strong>رقم:</strong> <span id="p_ref"></span></div></div>
         <table><thead><tr><th>البيان</th><th>العدد</th><th>السعر</th><th>المجموع</th></tr></thead><tbody id="p_tableBody"></tbody></table>
         <div id="p_paySection" style="display:none;margin-top:20px;"><h4>سجل الدفعات</h4><table style="width:60%;margin-right:auto;"><thead><tr><th>التاريخ</th><th>المبلغ</th></tr></thead><tbody id="p_payBody"></tbody></table></div>
-        <div class="totals-box">
-            <div style="display:flex;justify-content:space-between;"><span>المجموع:</span><span id="p_total">0</span></div>
-            <div style="display:flex;justify-content:space-between;color:#10b981;"><span>المدفوع:</span><span id="p_paid">0</span></div>
-            <div style="display:flex;justify-content:space-between;font-weight:bold;border-top:2px solid #ddd;margin-top:10px;padding-top:10px;"><span>الباقي:</span><span id="p_remain">0</span></div>
-        </div>
+        <div class="totals-box"><div style="display:flex;justify-content:space-between;"><span>المجموع:</span><span id="p_total">0</span></div><div style="display:flex;justify-content:space-between;color:#10b981;"><span>المدفوع:</span><span id="p_paid">0</span></div><div style="display:flex;justify-content:space-between;font-weight:bold;border-top:2px solid #ddd;margin-top:10px;padding-top:10px;"><span>الباقي:</span><span id="p_remain">0</span></div></div>
         <div style="margin-top:50px; text-align:center; color:#777; font-size:0.8rem;">شكرًا لتعاملكم معنا</div>
     </div>
 
     <script>
-        // Data & Config
-        let db = JSON.parse(localStorage.getItem('proElecDB_v27')) || [];
-        let config = JSON.parse(localStorage.getItem('proElecConfig_v27')) || { name: "ProElec", desc: "نظام الفوترة الاحترافي", phone: "", addr: "", pin: "0000" };
+        // Data Init (V28)
+        let db = JSON.parse(localStorage.getItem('proElecDB_v28')) || [];
+        let config = JSON.parse(localStorage.getItem('proElecConfig_v28')) || { name: "ProElec", desc: "نظام الفوترة الاحترافي", phone: "", addr: "", pin: "0000" };
         let state = { id: null, name: '', type: 'فاتورة نهائية', items: [], payments: [] };
-        
         let defaultPrices = { socket: { name: 'تركيب مأخذ', price: 700, icon: 'fa-plug' }, light: { name: 'نقطة إنارة', price: 800, icon: 'fa-lightbulb' }, cable: { name: 'سحب كابلات', price: 150, icon: 'fa-bezier-curve' }, panel: { name: 'طبلون', price: 5000, icon: 'fa-server' }, drill: { name: 'حفر العلب', price: 150, icon: 'fa-hammer' }, breaker: { name: 'تركيب قاطعة', price: 350, icon: 'fa-toggle-on' } };
-        let savedPrices = JSON.parse(localStorage.getItem('proElecPrices_v27'));
-        if(savedPrices) { for(let key in defaultPrices) { if(savedPrices[key]) defaultPrices[key].price = savedPrices[key]; } }
+        let savedPrices = JSON.parse(localStorage.getItem('proElecPrices_v28'));
+        if(savedPrices) { for(let k in defaultPrices) { if(savedPrices[k]) defaultPrices[k].price = savedPrices[k]; } }
 
         window.onload = () => { applyConfigToUI(); document.getElementById('payDate').valueAsDate = new Date(); updateDropdown(); renderQuickButtons(); };
 
         // UI Logic
         function applyConfigToUI() { document.getElementById('displayAppName').innerText = config.name; document.getElementById('displayAppDesc').innerText = config.desc; document.title = config.name; }
+        
         function render() {
             document.getElementById('docType').value = state.type; document.getElementById('clientDropdown').value = state.id || "";
-            const list = document.getElementById('list'); let listHTML = ''; let total = 0;
-            state.items.forEach((i, idx) => { total += i.price * i.qty; listHTML += `<li class="item-row"><div><strong>${i.name}</strong> <span style="font-size:0.85em;color:#666;display:block">(${i.qty} x ${i.price.toLocaleString()} د.ج)</span></div><div style="display:flex;gap:10px;"><button class="action-btn" onclick="editItem(${idx})"><i class="fas fa-pen btn-edit-icon"></i></button><button class="action-btn" onclick="delItem(${idx})"><i class="fas fa-times btn-del-icon"></i></button></div></li>`; });
-            list.innerHTML = listHTML;
-            const payList = document.getElementById('payList'); let payHTML = ''; let paid = 0;
-            state.payments.forEach((py, idx) => { 
-              
+            const list = document.getElementById('list'); let h=''; let t=0;
+            state.items.forEach((i,x) => { t+=i.price*i.qty; h+=`<li class="item-row"><div><strong>${i.name}</strong> <span style="font-size:0.85em;color:#666;display:block">(${i.qty} x ${i.price.toLocaleString()} د.ج)</span></div><div style="display:flex;gap:10px;"><button class="action-btn" onclick="editItem(${x})"><i class="fas fa-pen btn-edit-icon"></i></button><button class="action-btn" onclick="delItem(${x})"><i class="fas fa-times btn-del-icon"></i></button></div></li>`; });
+            list.innerHTML = h;
+            const pList = document.getElementById('payList'); let ph=''; let p=0;
+            state.payments.forEach((py,x) => { p+=py.amount; ph+=`<div style="display:flex;justify-content:space-between;background:rgba(16,185,129,0.1);padding:10px;border-radius:10px;margin-bottom:8px;align-items:center;"><div><span style="font-weight:bold;color:var(--success)">${py.amount.toLocaleString()}</span> <small style="color:#555">(${py.date})</small></div><div style="display:flex;gap:10px;"><button class="action-btn" onclick="editPayment(${x})"><i class="fas fa-pen btn-edit-icon"></i></button><button class="action-btn" onclick="delPay(${x})"><i class="fas fa-times btn-del-icon"></i></button></div></div>`; });
+            pList.innerHTML = ph;
+            document.getElementById('totalTxt').innerText = t.toLocaleString() + ' د.ج'; document.getElementById('pai
