@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -198,4 +198,125 @@
             const pList = document.getElementById('payList'); let ph=''; let p=0;
             state.payments.forEach((py,x) => { p+=py.amount; ph+=`<div style="display:flex;justify-content:space-between;background:rgba(16,185,129,0.1);padding:10px;border-radius:10px;margin-bottom:8px;align-items:center;"><div><span style="font-weight:bold;color:var(--success)">${py.amount.toLocaleString()}</span> <small style="color:#555">(${py.date})</small></div><div style="display:flex;gap:10px;"><button class="action-btn" onclick="editPayment(${x})"><i class="fas fa-pen btn-edit-icon"></i></button><button class="action-btn" onclick="delPay(${x})"><i class="fas fa-times btn-del-icon"></i></button></div></div>`; });
             pList.innerHTML = ph;
-            document.getElementById('totalTxt').innerText = t.toLocaleString() + ' د.ج'; document.getElementById('pai
+            document.getElementById('totalTxt').innerText = t.toLocaleString() + ' د.ج'; document.getElementById('paidTxt').innerText = p.toLocaleString() + ' د.ج'; document.getElementById('remainTxt').innerText = (t-p).toLocaleString() + ' د.ج';
+        }
+
+        // WhatsApp Logic
+        function shareWhatsapp() {
+            if (!state.name) return alert('يرجى اختيار عميل أولاً!');
+            let text = `*فاتورة من ${config.name}*\n`;
+            text += `*العميل:* ${state.name}\n*التاريخ:* ${new Date().toLocaleDateString('ar-DZ')}\n----------------\n`;
+            
+            let total = 0;
+            state.items.forEach(i => {
+                let sub = i.price * i.qty;
+                total += sub;
+                text += `▪️ ${i.name} (${i.qty}) : ${sub.toLocaleString()}\n`;
+            });
+            
+            let paid = 0;
+            state.payments.forEach(p => paid += p.amount);
+            
+            text += `----------------\n`;
+            text += `*المجموع الكلي:* ${total.toLocaleString()} د.ج\n`;
+            text += `*المدفوع:* ${paid.toLocaleString()} د.ج\n`;
+            text += `*الباقي:* ${(total - paid).toLocaleString()} د.ج\n`;
+            
+            if(config.phone) text += `\nللتواصل: ${config.phone}`;
+            
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        // --- Functions (Edit, Save, Print, etc.) ---
+        function editItem(i) { let np=prompt('تعديل السعر', state.items[i].price); if(np!==null){ let nq=prompt('تعديل الكمية', state.items[i].qty); if(nq!==null){ state.items[i].price=parseFloat(np); state.items[i].qty=parseFloat(nq); render(); }}}
+        function editPayment(i) { let na=prompt("تعديل المبلغ:", state.payments[i].amount); if(na!==null){ let nd=prompt("تعديل التاريخ:", state.payments[i].date); if(nd!==null){ state.payments[i].amount=parseFloat(na); state.payments[i].date=nd; render(); }}}
+        function openAdminPanel() { document.getElementById('adminPinInput').value=''; document.getElementById('pinModal').style.display='flex'; document.getElementById('adminPinInput').focus(); }
+        function checkAdminPin() { if(document.getElementById('adminPinInput').value===config.pin){ closeModal('pinModal'); openSettings(); } else alert('رمز خاطئ'); }
+        function openSettings() { document.getElementById('companySettingsModal').style.display='flex'; document.getElementById('confAppName').value=config.name; document.getElementById('confAppDesc').value=config.desc; document.getElementById('confAppPhone').value=config.phone; document.getElementById('confAppAddr').value=config.addr; }
+        function saveCompanyConfig() { config.name=document.getElementById('confAppName').value||"ProElec"; config.desc=document.getElementById('confAppDesc').value; config.phone=document.getElementById('confAppPhone').value; config.addr=document.getElementById('confAppAddr').value; let np=document.getElementById('confAppPin').value; if(np&&np.length>=4) config.pin=np; localStorage.setItem('proElecConfig_v28', JSON.stringify(config)); applyConfigToUI(); closeModal('companySettingsModal'); }
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        
+        function renderQuickButtons() { let g=document.getElementById('quickButtonsGrid'); g.innerHTML=''; for(let k in defaultPrices){ g.innerHTML+=`<button class="neu-btn" onclick="addQuickItem('${k}')"><i class="fas ${defaultPrices[k].icon}"></i><span>${defaultPrices[k].name}</span><span class="price-tag">${defaultPrices[k].price} د.ج</span></button>`; } }
+        function addQuickItem(k) { addItem(defaultPrices[k].name, defaultPrices[k].price); }
+        function openPriceSettings() { let c=document.getElementById('settingsInputs'); c.innerHTML=''; for(let k in defaultPrices){ c.innerHTML+=`<div class="setting-row"><label>${defaultPrices[k].name}</label><input type="number" id="p_${k}" value="${defaultPrices[k].price}" class="neu-input"></div>`; } document.getElementById('priceSettingsModal').style.display='flex'; }
+        function savePrices() { let n={}; for(let k in defaultPrices){ let v=parseFloat(document.getElementById(`p_${k}`).value); if(v){ defaultPrices[k].price=v; n[k]=v; } } localStorage.setItem('proElecPrices_v28', JSON.stringify(n)); renderQuickButtons(); closeModal('priceSettingsModal'); }
+        
+        function fillManualInput(s) { let v=s.value; if(!v) return; let [p, n]=v.split('|'); document.getElementById('manualName').value=n; document.getElementById('manualPrice').value=p; }
+        function addManualItem() { let n=document.getElementById('manualName').value; let p=parseFloat(document.getElementById('manualPrice').value); if(n&&p){ addItem(n,p); document.getElementById('manualName').value=''; document.getElementById('manualPrice').value=''; } }
+        
+        function toggleNewClient() { let s=document.getElementById('newClientSection'); s.style.display=s.style.display==='none'?'flex':'none'; if(s.style.display==='flex') document.getElementById('newClientName').focus(); }
+        function saveNewClient() { let n=document.getElementById('newClientName').value; if(!n) return; let nc={id:Date.now(), name:n, type:'فاتورة نهائية', items:[], payments:[]}; db.push(nc); saveDB(); updateDropdown(); document.getElementById('clientDropdown').value=nc.id; loadClient(nc.id); document.getElementById('newClientName').value=''; toggleNewClient(); }
+        function loadClient(id) { if(!id){ state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); return; } let f=db.find(c=>c.id==id); if(f){ state=JSON.parse(JSON.stringify(f)); render(); } }
+        function saveData() { if(!state.id) return alert('اختر العميل'); state.type=document.getElementById('docType').value; let i=db.findIndex(c=>c.id==state.id); if(i!==-1) db[i]=state; saveDB(); alert('تم الحفظ'); }
+        function deleteClient() { if(confirm('حذف؟')) { db=db.filter(c=>c.id!==state.id); saveDB(); updateDropdown(); state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); } }
+        function addItem(n,p) { let ex=state.items.find(x=>x.name===n); if(ex) ex.qty++; else state.items.push({name:n,price:p,qty:1}); render(); }
+        function addPayment() { let a=parseFloat(document.getElementById('payAmount').value); let d=document.getElementById('payDate').value; if(a){ state.payments.push({amount:a,date:d}); document.getElementById('payAmount').value=''; render(); } }
+        function delItem(i){ state.items.splice(i,1); render(); } function delPay(i){ state.payments.splice(i,1); render(); }
+        function updateDropdown() { let s=document.getElementById('clientDropdown'); let h='<option value="">-- اختر عميلاً --</option>'; db.forEach(c=>h+=`<option value="${c.id}">${c.name}</option>`); s.innerHTML=h; }
+        function saveDB() { localStorage.setItem('proElecDB_v28', JSON.stringify(db)); }
+
+        // Robust Backup & Restore (V28)
+        function exportData() {
+            try {
+                const fullBackup = {
+                    version: "v28",
+                    timestamp: new Date().toISOString(),
+                    db: db || [],
+                    config: config || {},
+                    prices: JSON.parse(localStorage.getItem('proElecPrices_v28')) || {}
+                };
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([JSON.stringify(fullBackup, null, 2)], {type: "application/json"}));
+                a.download = `ProElec_Backup_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            } catch(e) { alert("خطأ في النسخ: " + e.message); }
+        }
+
+        function importData(inp) {
+            const file = inp.files[0]; if(!file) return;
+            const fr = new FileReader();
+            fr.onload = e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(confirm('هل أنت متأكد؟ سيتم استبدال البيانات الحالية.')) {
+                        // Handle legacy (array) and new (object) formats
+                        if(Array.isArray(data)) { db = data; } 
+                        else if(data.db) { 
+                            db = data.db; 
+                            if(data.config) { config = data.config; localStorage.setItem('proElecConfig_v28', JSON.stringify(config)); }
+                            if(data.prices) localStorage.setItem('proElecPrices_v28', JSON.stringify(data.prices));
+                        }
+                        saveDB(); location.reload();
+                    }
+                } catch(err) { alert('ملف تالف أو غير مدعوم'); }
+            };
+            fr.readAsText(file);
+            inp.value = ''; // Reset input
+        }
+
+        function forcePrint() {
+            if(!state.name) return alert('اختر عميلاً');
+            document.getElementById('p_compName').innerText = config.name || "ProElec";
+            document.getElementById('p_compDesc').innerText = config.desc || "";
+            document.getElementById('p_compPhone').innerText = config.phone ? "الهاتف: "+config.phone : "";
+            document.getElementById('p_compAddr').innerText = config.addr ? "العنوان: "+config.addr : "";
+            document.getElementById('p_clientName').innerText = state.name;
+            document.getElementById('p_date').innerText = new Date().toLocaleDateString('ar-DZ');
+            document.getElementById('p_ref').innerText = "#" + String(state.id).slice(-5);
+            
+            let h=''; let t=0; state.items.forEach(i=>{ let s=i.price*i.qty; t+=s; h+=`<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${s}</td></tr>`; });
+            document.getElementById('p_tableBody').innerHTML=h;
+            
+            let ph=''; let p=0; 
+            if(state.payments.length){ document.getElementById('p_paySection').style.display='block'; state.payments.forEach(py=>{ p+=py.amount; ph+=`<tr><td>${py.date}</td><td>${py.amount}</td></tr>`; }); document.getElementById('p_payBody').innerHTML=ph; }
+            else document.getElementById('p_paySection').style.display='none';
+            
+            document.getElementById('p_total').innerText = t.toLocaleString();
+            document.getElementById('p_paid').innerText = p.toLocaleString();
+            document.getElementById('p_remain').innerText = (t-p).toLocaleString();
+            
+            window.print();
+        }
+    </script>
+</body>
+</html>
