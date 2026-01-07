@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProElec V25 - Professional ID</title>
+    <title>ProElec V27 - WhatsApp Integration</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --bg: #e0e5ec; --primary: #3b82f6; --text-main: #1f2937; --danger: #ef4444; --success: #10b981; --warning: #f59e0b;
+            --bg: #e0e5ec; --primary: #3b82f6; --text-main: #1f2937; --danger: #ef4444; --success: #10b981; --warning: #f59e0b; --whatsapp: #25D366;
             --shadow-light: #ffffff; --shadow-dark: #a3b1c6;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -50,6 +50,8 @@
         .fab-bar { position: fixed; bottom: 25px; left: 20px; right: 20px; display: flex; gap: 15px; z-index: 100; background: rgba(224, 229, 236, 0.9); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.3); }
         .fab-main { flex: 2; background: linear-gradient(135deg, var(--primary), #2563eb); color: white !important; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); }
         .fab-action { flex: 1; background: #1f2937; color: white !important; }
+        /* WhatsApp Button Style */
+        .fab-whatsapp { flex: 1; color: var(--whatsapp) !important; font-size: 1.5rem; }
 
         /* Modals */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
@@ -61,6 +63,7 @@
 
         /* Print Area */
         #printable-area { display: none; }
+        
         @media print {
             .app-container, .fab-bar, .modal-overlay { display: none !important; }
             body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
@@ -157,16 +160,28 @@
         </div>
 
         <div class="fab-bar">
-            <button class="neu-btn fab-main" onclick="saveData()"><i class="fas fa-save"></i> حفظ</button>
-            <button class="neu-btn fab-action btn-red" onclick="deleteClient()"><i class="fas fa-trash-alt"></i></button>
-            <button class="neu-btn fab-action" onclick="forcePrint()"><i class="fas fa-print"></i></button>
+            <button class="neu-btn fab-main" onclick="saveData()">
+                <i class="fas fa-save"></i> حفظ
+            </button>
+            
+            <button class="neu-btn fab-action btn-red" style="width:50px" onclick="deleteClient()">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            
+            <button class="neu-btn fab-whatsapp" onclick="shareWhatsapp()" title="إرسال عبر واتساب">
+                <i class="fab fa-whatsapp"></i>
+            </button>
+
+            <button class="neu-btn fab-action" style="width:60px" onclick="forcePrint()">
+                <i class="fas fa-print"></i>
+            </button>
         </div>
     </div>
 
     <div id="pinModal" class="modal-overlay">
         <div class="modal-content" style="text-align:center;">
-            <h3 style="margin-bottom:15px;color:var(--text-main);">لوحة المدير</h3>
-            <p style="margin-bottom:15px;color:#666;">أدخل الرمز السري</p>
+            <h3>لوحة المدير</h3>
+            <p>أدخل الرمز السري</p>
             <input type="password" id="adminPinInput" class="neu-input" placeholder="****" style="text-align:center;font-size:1.5rem;letter-spacing:5px;">
             <div style="display:flex;gap:10px;margin-top:15px;"><button class="neu-btn btn-green" onclick="checkAdminPin()" style="flex:1">دخول</button><button class="neu-btn btn-red" onclick="closeModal('pinModal')" style="flex:1">إلغاء</button></div>
         </div>
@@ -174,17 +189,17 @@
 
     <div id="companySettingsModal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="text-align:center;margin-bottom:20px;color:var(--primary);">إعدادات المؤسسة</h3>
+            <h3>إعدادات المؤسسة</h3>
             <div class="setting-group"><label>اسم المؤسسة</label><input type="text" id="confAppName" class="neu-input"></div>
             <div class="setting-group"><label>الوصف</label><input type="text" id="confAppDesc" class="neu-input"></div>
             <div class="setting-group"><label>رقم الهاتف</label><input type="text" id="confAppPhone" class="neu-input"></div>
             <div class="setting-group"><label>العنوان</label><input type="text" id="confAppAddr" class="neu-input"></div>
-            <div class="setting-group" style="border-top:1px solid #ccc;padding-top:15px;margin-top:15px;"><label style="color:var(--danger)">تغيير الرمز السري</label><input type="number" id="confAppPin" class="neu-input" placeholder="جديد"></div>
+            <div class="setting-group" style="border-top:1px solid #ccc;padding-top:15px;"><label style="color:var(--danger)">تغيير الرمز السري</label><input type="number" id="confAppPin" class="neu-input" placeholder="جديد"></div>
             <div style="display:flex;gap:10px;margin-top:20px;"><button class="neu-btn btn-green" onclick="saveCompanyConfig()" style="flex:2">حفظ</button><button class="neu-btn btn-red" onclick="closeModal('companySettingsModal')" style="flex:1">إلغاء</button></div>
         </div>
     </div>
 
-    <div id="priceSettingsModal" class="modal-overlay"><div class="modal-content"><h3 style="text-align:center;color:var(--primary);margin-bottom:15px;">أسعار الخدمات السريعة</h3><div id="settingsInputs"></div><div style="display:flex;gap:10px;margin-top:20px;"><button class="neu-btn btn-green" onclick="savePrices()" style="flex:1">حفظ</button><button class="neu-btn btn-red" onclick="closeModal('priceSettingsModal')" style="flex:1">إلغاء</button></div></div></div>
+    <div id="priceSettingsModal" class="modal-overlay"><div class="modal-content"><h3>أسعار الخدمات</h3><div id="settingsInputs"></div><div style="display:flex;gap:10px;margin-top:20px;"><button class="neu-btn btn-green" onclick="savePrices()" style="flex:1">حفظ</button><button class="neu-btn btn-red" onclick="closeModal('priceSettingsModal')" style="flex:1">إلغاء</button></div></div></div>
 
     <div id="printable-area">
         <div class="invoice-header">
@@ -195,15 +210,10 @@
                 <div id="p_compAddr"></div>
             </div>
         </div>
-        
         <div class="invoice-meta">
             <div><strong>الزبون:</strong> <span id="p_clientName"></span></div>
-            <div>
-                <strong>التاريخ:</strong> <span id="p_date"></span> | 
-                <strong>رقم:</strong> <span id="p_ref"></span>
-            </div>
+            <div><strong>التاريخ:</strong> <span id="p_date"></span> | <strong>رقم:</strong> <span id="p_ref"></span></div>
         </div>
-
         <table><thead><tr><th>البيان</th><th>العدد</th><th>السعر</th><th>المجموع</th></tr></thead><tbody id="p_tableBody"></tbody></table>
         <div id="p_paySection" style="display:none;margin-top:20px;"><h4>سجل الدفعات</h4><table style="width:60%;margin-right:auto;"><thead><tr><th>التاريخ</th><th>المبلغ</th></tr></thead><tbody id="p_payBody"></tbody></table></div>
         <div class="totals-box">
@@ -215,18 +225,18 @@
     </div>
 
     <script>
-        // --- 1. إعدادات النظام ---
-        let db = JSON.parse(localStorage.getItem('proElecDB_v25')) || [];
-        let config = JSON.parse(localStorage.getItem('proElecConfig_v25')) || { name: "ProElec", desc: "نظام الفوترة الاحترافي", phone: "", addr: "", pin: "0000" };
+        // Data & Config
+        let db = JSON.parse(localStorage.getItem('proElecDB_v27')) || [];
+        let config = JSON.parse(localStorage.getItem('proElecConfig_v27')) || { name: "ProElec", desc: "نظام الفوترة الاحترافي", phone: "", addr: "", pin: "0000" };
         let state = { id: null, name: '', type: 'فاتورة نهائية', items: [], payments: [] };
         
         let defaultPrices = { socket: { name: 'تركيب مأخذ', price: 700, icon: 'fa-plug' }, light: { name: 'نقطة إنارة', price: 800, icon: 'fa-lightbulb' }, cable: { name: 'سحب كابلات', price: 150, icon: 'fa-bezier-curve' }, panel: { name: 'طبلون', price: 5000, icon: 'fa-server' }, drill: { name: 'حفر العلب', price: 150, icon: 'fa-hammer' }, breaker: { name: 'تركيب قاطعة', price: 350, icon: 'fa-toggle-on' } };
-        let savedPrices = JSON.parse(localStorage.getItem('proElecPrices_v25'));
+        let savedPrices = JSON.parse(localStorage.getItem('proElecPrices_v27'));
         if(savedPrices) { for(let key in defaultPrices) { if(savedPrices[key]) defaultPrices[key].price = savedPrices[key]; } }
 
         window.onload = () => { applyConfigToUI(); document.getElementById('payDate').valueAsDate = new Date(); updateDropdown(); renderQuickButtons(); };
 
-        // --- 2. إدارة الواجهة ---
+        // UI Logic
         function applyConfigToUI() { document.getElementById('displayAppName').innerText = config.name; document.getElementById('displayAppDesc').innerText = config.desc; document.title = config.name; }
         function render() {
             document.getElementById('docType').value = state.type; document.getElementById('clientDropdown').value = state.id || "";
@@ -235,82 +245,4 @@
             list.innerHTML = listHTML;
             const payList = document.getElementById('payList'); let payHTML = ''; let paid = 0;
             state.payments.forEach((py, idx) => { 
-                paid += py.amount; 
-                payHTML += `
-                <div style="display:flex;justify-content:space-between;background:rgba(16,185,129,0.1);padding:10px;border-radius:10px;margin-bottom:8px;align-items:center;">
-                    <div><span style="font-weight:bold;color:var(--success)">${py.amount.toLocaleString()}</span> <small style="color:#555">(${py.date})</small></div> 
-                    <div style="display:flex;gap:10px;">
-                        <button class="action-btn" onclick="editPayment(${idx})"><i class="fas fa-pen btn-edit-icon"></i></button>
-                        <button class="action-btn" onclick="delPay(${idx})"><i class="fas fa-times btn-del-icon"></i></button>
-                    </div>
-                </div>`; 
-            });
-            payList.innerHTML = payHTML;
-            document.getElementById('totalTxt').innerText = total.toLocaleString() + ' د.ج'; document.getElementById('paidTxt').innerText = paid.toLocaleString() + ' د.ج'; document.getElementById('remainTxt').innerText = (total - paid).toLocaleString() + ' د.ج';
-        }
-
-        // --- 3. التعديلات والوظائف ---
-        function editItem(index) { const item = state.items[index]; let newPrice = prompt(`تعديل السعر`, item.price); if (newPrice !== null && newPrice.trim() !== "") { let newQty = prompt(`تعديل الكمية`, item.qty); if (newQty !== null && newQty.trim() !== "") { state.items[index].price = parseFloat(newPrice); state.items[index].qty = parseFloat(newQty); render(); } } }
-        function editPayment(index) { const pay = state.payments[index]; let newAmount = prompt("تعديل المبلغ:", pay.amount); if(newAmount!==null&&newAmount.trim()!==""){ let newDate = prompt("تعديل التاريخ:", pay.date); if(newDate!==null&&newDate.trim()!==""){ state.payments[index].amount=parseFloat(newAmount); state.payments[index].date=newDate; render(); } } }
-        function openAdminPanel() { document.getElementById('adminPinInput').value = ''; document.getElementById('pinModal').style.display = 'flex'; document.getElementById('adminPinInput').focus(); }
-        function checkAdminPin() { if (document.getElementById('adminPinInput').value === config.pin) { closeModal('pinModal'); openCompanySettings(); } else { alert('رمز خاطئ!'); } }
-        function openCompanySettings() { document.getElementById('confAppName').value = config.name; document.getElementById('confAppDesc').value = config.desc; document.getElementById('confAppPhone').value = config.phone || ""; document.getElementById('confAppAddr').value = config.addr || ""; document.getElementById('confAppPin').value = ""; document.getElementById('companySettingsModal').style.display = 'flex'; }
-        function saveCompanyConfig() { config.name = document.getElementById('confAppName').value || "ProElec"; config.desc = document.getElementById('confAppDesc').value || ""; config.phone = document.getElementById('confAppPhone').value; config.addr = document.getElementById('confAppAddr').value; const newPin = document.getElementById('confAppPin').value; if(newPin && newPin.length >= 4) { config.pin = newPin; alert('تم تحديث الرمز'); } localStorage.setItem('proElecConfig_v25', JSON.stringify(config)); applyConfigToUI(); closeModal('companySettingsModal'); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
-        function renderQuickButtons() { const grid = document.getElementById('quickButtonsGrid'); grid.innerHTML = ''; for (const [key, data] of Object.entries(defaultPrices)) { grid.innerHTML += `<button class="neu-btn" onclick="addQuickItem('${key}')"><i class="fas ${data.icon}"></i><span>${data.name}</span><span class="price-tag">${data.price} د.ج</span></button>`; } }
-        function addQuickItem(key) { const item = defaultPrices[key]; addItem(item.name, item.price); }
-        function openPriceSettings() { const c = document.getElementById('settingsInputs'); c.innerHTML = ''; for (const [key, data] of Object.entries(defaultPrices)) { c.innerHTML += `<div class="setting-row"><label><i class="fas ${data.icon}"></i> ${data.name}</label><input type="number" id="price_${key}" class="neu-input" value="${data.price}" style="margin:0"></div>`; } document.getElementById('priceSettingsModal').style.display = 'flex'; }
-        function savePrices() { let n = {}; for (const key in defaultPrices) { const val = parseFloat(document.getElementById(`price_${key}`).value); if(val) { defaultPrices[key].price = val; n[key] = val; } } localStorage.setItem('proElecPrices_v25', JSON.stringify(n)); renderQuickButtons(); closeModal('priceSettingsModal'); }
-        function fillManualInput(s) { const v = s.value; if(!v) return; const [p, n] = v.split('|'); document.getElementById('manualName').value = n; document.getElementById('manualPrice').value = p; }
-        function addManualItem() { const n = document.getElementById('manualName').value; const p = parseFloat(document.getElementById('manualPrice').value); if(n && p) { addItem(n, p); document.getElementById('manualName').value=''; document.getElementById('manualPrice').value=''; document.getElementById('extraServicesDropdown').value=""; } else { alert('بيانات ناقصة'); } }
-        function toggleNewClient() { const d=document.getElementById('dropdownSection'); const i=document.getElementById('newClientSection'); if(i.style.display==='none'){d.style.display='none';i.style.display='flex';document.getElementById('newClientName').focus();}else{d.style.display='block';i.style.display='none';} }
-        function saveNewClient() { const name=document.getElementById('newClientName').value; if(!name) return alert('الاسم مطلوب'); const newClient={id:Date.now(),name,type:'فاتورة نهائية',items:[],payments:[]}; db.push(newClient); saveDB(); updateDropdown(); document.getElementById('clientDropdown').value=newClient.id; loadClient(newClient.id); document.getElementById('newClientName').value=''; toggleNewClient(); }
-        function loadClient(id) { if(!id) { state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); return; } const found=db.find(c=>c.id==id); if(found){ state=JSON.parse(JSON.stringify(found)); render(); } }
-        function saveData() { if(!state.id) return alert('اختر العميل'); state.type=document.getElementById('docType').value; const idx=db.findIndex(c=>c.id==state.id); if(idx!==-1) db[idx]=state; saveDB(); alert('تم الحفظ'); }
-        function deleteClient() { if(confirm('حذف؟')) { db=db.filter(c=>c.id!==state.id); saveDB(); updateDropdown(); state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); } }
-        function addItem(name, price) { const exist=state.items.find(i=>i.name===name); if(exist) exist.qty++; else state.items.push({name,price,qty:1}); render(); }
-        function addPayment() { const amt=parseFloat(document.getElementById('payAmount').value); const date=document.getElementById('payDate').value; if(amt) { state.payments.push({amount:amt,date}); document.getElementById('payAmount').value=''; render(); } }
-        function delItem(i) { state.items.splice(i,1); render(); } function delPay(i) { state.payments.splice(i,1); render(); }
-        function updateDropdown() { const sel=document.getElementById('clientDropdown'); let opts='<option value="">-- اختر عميلاً --</option>'; db.forEach(c=>opts+=`<option value="${c.id}">${c.name}</option>`); sel.innerHTML=opts; }
-        function saveDB() { localStorage.setItem('proElecDB_v25', JSON.stringify(db)); }
-        function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({db:db, prices:JSON.parse(localStorage.getItem('proElecPrices_v25'))||{}, config:config})], {type: "application/json"})); a.download = `ProElec_Backup_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-        function importData(inp) { const fr = new FileReader(); fr.onload = e => { try { const data = JSON.parse(e.target.result); if(confirm('استبدال؟')) { if(data.db) db=data.db; if(data.prices) localStorage.setItem('proElecPrices_v25', JSON.stringify(data.prices)); if(data.config) { config=data.config; localStorage.setItem('proElecConfig_v25', JSON.stringify(config)); } saveDB(); location.reload(); } } catch(err) { alert('ملف تالف'); } }; if(inp.files[0]) fr.readAsText(inp.files[0]); }
-
-        // --- 4. الطباعة (النسخة المضمونة - Force Print) ---
-        function forcePrint() {
-            if (!state.name) return alert('يرجى اختيار عميل أولاً');
-            
-            // تعبئة البيانات (مع حماية ضد الحقول الفارغة)
-            document.getElementById('p_compName').innerText = config.name || "ProElec";
-            document.getElementById('p_compDesc').innerText = config.desc || "";
-            document.getElementById('p_compPhone').innerText = config.phone ? "الهاتف: " + config.phone : "";
-            document.getElementById('p_compAddr').innerText = config.addr ? "العنوان: " + config.addr : "";
-
-            document.getElementById('p_clientName').innerText = state.name;
-            document.getElementById('p_date').innerText = new Date().toLocaleDateString('ar-DZ');
-            
-            // --- التعديل هنا: تقصير الرقم ---
-            // تحويل الـ ID إلى نص وقص آخر 5 خانات
-            document.getElementById('p_ref').innerText = "#" + String(state.id).slice(-5);
-            
-            let h = ''; let t = 0;
-            state.items.forEach(i => { let s = i.price * i.qty; t += s; h += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price.toLocaleString()}</td><td>${s.toLocaleString()}</td></tr>`; });
-            document.getElementById('p_tableBody').innerHTML = h;
-            
-            let ph = ''; let p = 0;
-            if (state.payments.length > 0) {
-                document.getElementById('p_paySection').style.display = 'block';
-                state.payments.forEach(py => { p += py.amount; ph += `<tr><td>${py.date}</td><td>${py.amount.toLocaleString()}</td></tr>`; });
-                document.getElementById('p_payBody').innerHTML = ph;
-            } else { document.getElementById('p_paySection').style.display = 'none'; }
-            
-            document.getElementById('p_total').innerText = t.toLocaleString() + ' د.ج';
-            document.getElementById('p_paid').innerText = p.toLocaleString() + ' د.ج';
-            document.getElementById('p_remain').innerText = (t - p).toLocaleString() + ' د.ج';
-            
-            window.print();
-        }
-    </script>
-</body>
-</html>
+              
