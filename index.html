@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProElec V32 - Print Perfect</title>
+    <title>ProElec V33 - Cloud Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -28,6 +28,12 @@
         .action-btn:active { transform: scale(0.9); }
         .btn-edit-icon { color: var(--warning); font-size: 0.9rem; }
         .btn-del-icon { color: var(--danger); font-size: 0.9rem; }
+
+        /* Cloud Status */
+        .cloud-status { text-align: center; font-size: 0.8rem; margin-bottom: 10px; font-weight: bold; }
+        .status-online { color: var(--success); }
+        .status-offline { color: var(--danger); }
+        .status-loading { color: var(--warning); }
 
         /* Header */
         .brand-container { text-align: center; margin-bottom: 25px; position: relative; }
@@ -60,59 +66,20 @@
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .setting-row input { width: 100px; padding: 10px; text-align: center; }
 
-        /* --- Print System (Optimized for 1 Page) --- */
+        /* --- Print System --- */
         #printable-area { display: none; }
-        
         @media print {
             .app-container, .fab-bar, .modal-overlay, #importFile { display: none !important; }
-            
-            /* Reset Body for Print to avoid extra pages */
-            html, body { 
-                background: white; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                height: auto !important; 
-                min-height: 0 !important;
-                overflow: hidden !important; 
-            }
-            
-            #printable-area { 
-                display: block !important; 
-                position: absolute; 
-                top: 0; 
-                left: 0;
-                width: 100%; 
-                padding: 10px; /* Minimal padding */
-                background: white; 
-                color: black;
-            }
-            
-            /* Compressed Header */
+            html, body { background: white; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: hidden !important; }
+            #printable-area { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 10px; background: white; color: black; }
             .invoice-header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; }
             .company-name { font-size: 1.8rem; font-weight: 800; color: var(--primary) !important; margin-bottom: 2px; }
             .company-details { font-size: 0.8rem; color: #333; margin-bottom: 2px; line-height: 1.2; }
-            
-            /* Compressed Meta */
             .invoice-meta { display: flex; justify-content: space-between; background: #f8f9fa !important; padding: 6px 10px; border-radius: 6px; border: 1px solid #eee; font-size: 0.8rem; margin-bottom: 10px; }
-            
-            /* Compressed Table */
             table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.85rem; }
             th { background-color: #f3f4f6 !important; color: #111 !important; padding: 4px; border: 1px solid #ccc; font-weight: bold; }
             td { border: 1px solid #ccc; padding: 4px; color: #111; text-align: center; }
-            
-            /* Compressed Totals */
-            .totals-box { 
-                width: 45%; 
-                margin-right: auto; 
-                background: #f9fafb !important; 
-                border: 1px solid #eee; 
-                padding: 8px; 
-                border-radius: 6px; 
-                page-break-inside: avoid; 
-                font-size: 0.85rem; 
-                margin-top: 5px;
-            }
-            
+            .totals-box { width: 45%; margin-right: auto; background: #f9fafb !important; border: 1px solid #eee; padding: 8px; border-radius: 6px; page-break-inside: avoid; font-size: 0.85rem; margin-top: 5px; }
             @page { margin: 0.5cm; size: A4 portrait; }
         }
     </style>
@@ -125,12 +92,7 @@
             <button class="admin-btn" onclick="openAdminPanel()"><i class="fas fa-lock"></i></button>
             <div class="brand-title" id="displayAppName">ProElec</div>
             <div class="brand-slogan" id="displayAppDesc">نظام الفوترة الاحترافي</div>
-        </div>
-
-        <div class="neu-box" style="display:flex; gap:12px; padding:15px;">
-            <button class="neu-btn" onclick="exportData()" style="flex:1; font-size:0.85rem;"><i class="fas fa-cloud-download-alt"></i> نسخ احتياطي</button>
-            <button class="neu-btn" onclick="document.getElementById('importFile').click()" style="flex:1; font-size:0.85rem;"><i class="fas fa-cloud-upload-alt"></i> استرجاع</button>
-            <input type="file" id="importFile" style="display:none" onchange="importData(this)">
+            <div id="cloudStatus" class="cloud-status status-loading"><i class="fas fa-circle-notch fa-spin"></i> جاري الاتصال بالسحابة...</div>
         </div>
 
         <div class="neu-box">
@@ -195,7 +157,7 @@
         </div>
 
         <div class="fab-bar">
-            <button class="neu-btn fab-main" onclick="saveData()"><i class="fas fa-save"></i> حفظ</button>
+            <button class="neu-btn fab-main" onclick="manualSave()"><i class="fas fa-cloud-upload-alt"></i> حفظ في السحابة</button>
             <button class="neu-btn fab-action btn-red" onclick="deleteClient()"><i class="fas fa-trash-alt"></i></button>
             <button class="neu-btn fab-whatsapp" onclick="shareWhatsapp()"><i class="fab fa-whatsapp"></i></button>
             <button class="neu-btn fab-action" onclick="forcePrint()"><i class="fas fa-print"></i></button>
@@ -222,68 +184,137 @@
         <table><thead><tr><th>البيان</th><th>العدد</th><th>السعر</th><th>المجموع</th></tr></thead><tbody id="p_tableBody"></tbody></table>
         <div id="p_paySection" style="display:none;margin-top:20px;"><h4>سجل الدفعات</h4><table style="width:60%;margin-right:auto;"><thead><tr><th>التاريخ</th><th>المبلغ</th></tr></thead><tbody id="p_payBody"></tbody></table></div>
         <div class="totals-box"><div style="display:flex;justify-content:space-between;"><span>المجموع:</span><span id="p_total">0</span></div><div style="display:flex;justify-content:space-between;color:#10b981;"><span>المدفوع:</span><span id="p_paid">0</span></div><div style="display:flex;justify-content:space-between;font-weight:bold;border-top:2px solid #ddd;margin-top:10px;padding-top:10px;"><span>الباقي:</span><span id="p_remain">0</span></div></div>
-        
     </div>
 
-    <script>
-        // Init with Recovery Logic (V31)
-        let db, config, savedPrices, state;
-        
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 🔴 🔴 🔴 استبدل هذا الجزء بالمفتاح الخاص بك 🔴 🔴 🔴
+        const firebaseConfig = {
+            apiKey: "ضع_كود_API_KEY_هنا",
+            authDomain: "proelec-app.firebaseapp.com",
+            projectId: "proelec-app",
+            storageBucket: "proelec-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:xxxxxx"
+        };
+        // -------------------------------------------------------------
+
+        // تهيئة فايربيس
+        let app, dbFirestore;
         try {
-            // 1. Try to load main DB
-            db = JSON.parse(localStorage.getItem('proElecDB_v28')) || [];
+            app = initializeApp(firebaseConfig);
+            dbFirestore = getFirestore(app);
+            console.log("🔥 Firebase initialized");
             
-            // 2. Data Rescue: If DB is empty, try to import from V3/V4 legacy storage
-            if (db.length === 0) {
-                let legacyData = JSON.parse(localStorage.getItem('pe_clients_v4')); // V3.x key
-                if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
-                    // Migrate data format
-                    db = legacyData.map((c, idx) => ({
-                        id: Date.now() + idx,
-                        name: c.name || "عميل مسترجع",
-                        type: 'فاتورة نهائية',
-                        items: [], // V3 didn't store items clearly, usually just totals
-                        payments: c.payments || [],
-                        note: "تم استرجاع هذا العميل من النسخة القديمة"
-                    }));
-                    localStorage.setItem('proElecDB_v28', JSON.stringify(db));
-                    alert("تم استرجاع بيانات العملاء من النسخة القديمة بنجاح!");
-                }
-            }
+            // تعيين مؤشر الاتصال
+            document.getElementById('cloudStatus').innerHTML = '<i class="fas fa-wifi"></i> متصل بالسحابة';
+            document.getElementById('cloudStatus').className = 'cloud-status status-online';
 
-            config = JSON.parse(localStorage.getItem('proElecConfig_v28')) || { name: "ProElec", desc: "نظام الفوترة الاحترافي", phone: "", addr: "", pin: "0000" };
-            savedPrices = JSON.parse(localStorage.getItem('proElecPrices_v28'));
-            
-            // 3. Load Active State (Resume Work)
-            let savedState = JSON.parse(localStorage.getItem('proElecState_v31'));
-            state = savedState || { id: null, name: '', type: 'فاتورة نهائية', items: [], payments: [] };
+            // جعل الدوال متاحة للسكربت الرئيسي
+            window.dbFirestore = dbFirestore;
+            window.doc = doc;
+            window.getDoc = getDoc;
+            window.setDoc = setDoc;
 
-        } catch (e) {
-            console.error("Init Error", e);
-            db = []; config = { name: "ProElec", pin: "0000" }; state = { id: null, name: '', items: [], payments: [] };
+            // محاولة تحميل البيانات فوراً عند الفتح
+            window.loadFromCloud();
+        } catch(e) {
+            console.error("Firebase Error", e);
+            document.getElementById('cloudStatus').innerHTML = '<i class="fas fa-exclamation-triangle"></i> وضع غير متصل (بيانات محلية فقط)';
+            document.getElementById('cloudStatus').className = 'cloud-status status-offline';
+        }
+    </script>
+    <script>
+        // Main Application Logic (V33)
+        let db = [], config = { name: "ProElec", pin: "0000" }, savedPrices, state;
+        let defaultPrices = { socket: { name: 'تركيب مأخذ', price: 700, icon: 'fa-plug' }, light: { name: 'نقطة إنارة', price: 800, icon: 'fa-lightbulb' }, cable: { name: 'سحب كابلات', price: 150, icon: 'fa-bezier-curve' }, panel: { name: 'طبلون', price: 5000, icon: 'fa-server' }, drill: { name: 'حفر العلب', price: 150, icon: 'fa-hammer' }, breaker: { name: 'تركيب قاطعة', price: 350, icon: 'fa-toggle-on' } };
+
+        window.onload = () => {
+            // Load local data first for speed
+            loadLocalData();
+            document.getElementById('payDate').valueAsDate = new Date();
+            renderQuickButtons();
+        };
+
+        function loadLocalData() {
+            try {
+                db = JSON.parse(localStorage.getItem('proElecDB_v28')) || [];
+                config = JSON.parse(localStorage.getItem('proElecConfig_v28')) || { name: "ProElec", desc: "نظام الفوترة الاحترافي", phone: "", addr: "", pin: "0000" };
+                savedPrices = JSON.parse(localStorage.getItem('proElecPrices_v28'));
+                if(savedPrices) for(let k in defaultPrices) if(savedPrices[k]) defaultPrices[k].price = savedPrices[k];
+                
+                state = JSON.parse(localStorage.getItem('proElecState_v31')) || { id: null, name: '', type: 'فاتورة نهائية', items: [], payments: [] };
+                
+                applyConfigToUI();
+                updateDropdown();
+                if(state.id) render();
+            } catch(e) { console.error("Local Load Error", e); }
         }
 
-        let defaultPrices = { socket: { name: 'تركيب مأخذ', price: 700, icon: 'fa-plug' }, light: { name: 'نقطة إنارة', price: 800, icon: 'fa-lightbulb' }, cable: { name: 'سحب كابلات', price: 150, icon: 'fa-bezier-curve' }, panel: { name: 'طبلون', price: 5000, icon: 'fa-server' }, drill: { name: 'حفر العلب', price: 150, icon: 'fa-hammer' }, breaker: { name: 'تركيب قاطعة', price: 350, icon: 'fa-toggle-on' } };
-        if(savedPrices) { for(let k in defaultPrices) { if(savedPrices[k]) defaultPrices[k].price = savedPrices[k]; } }
-
-        window.onload = () => { 
+        // --- Cloud Functions ---
+        window.loadFromCloud = async function() {
+            if(!window.dbFirestore) return;
             try {
-                applyConfigToUI(); 
-                document.getElementById('payDate').valueAsDate = new Date(); 
-                updateDropdown(); 
-                renderQuickButtons();
-                // If we have a recovered state, render it immediately
-                if(state.id) render(); 
-            } catch(e) { console.error("UI init error", e); }
+                // قراءة ملف البيانات الرئيسي
+                const docRef = window.doc(window.dbFirestore, "app_data", "backup");
+                const docSnap = await window.getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    console.log("☁️ Data loaded from cloud");
+                    
+                    // تحديث البيانات المحلية
+                    db = cloudData.db || [];
+                    config = cloudData.config || config;
+                    // حفظها محلياً أيضاً
+                    saveToLocalStorage();
+                    
+                    // تحديث الواجهة
+                    applyConfigToUI();
+                    updateDropdown();
+                    if(state.id) {
+                        // تحديث حالة العميل الحالي إذا تغيرت في السحابة
+                        let freshClient = db.find(c => c.id == state.id);
+                        if(freshClient) { state = JSON.parse(JSON.stringify(freshClient)); render(); }
+                    }
+                    
+                    alert("تم مزامنة البيانات من السحابة بنجاح ✅");
+                }
+            } catch(e) {
+                console.error("Cloud Load Error", e);
+            }
+        };
+
+        window.manualSave = async function() {
+            if(!window.dbFirestore) return alert("خطأ: غير متصل بقاعدة البيانات");
+            const btn = document.querySelector('.fab-main');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> جاري الرفع...';
+            
+            try {
+                // حفظ البيانات الشاملة
+                const dataToSave = {
+                    db: db,
+                    config: config,
+                    timestamp: new Date().toISOString()
+                };
+                
+                await window.setDoc(window.doc(window.dbFirestore, "app_data", "backup"), dataToSave);
+                alert("تم الحفظ في السحابة بأمان ☁️✅");
+            } catch(e) {
+                alert("فشل الحفظ: " + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+            }
         };
 
         // --- Core Functions ---
         function applyConfigToUI() { document.getElementById('displayAppName').innerText = config.name; document.getElementById('displayAppDesc').innerText = config.desc; document.title = config.name; }
         
         function render() {
-            // Save state on every render (Auto-Save)
             localStorage.setItem('proElecState_v31', JSON.stringify(state));
-
             document.getElementById('docType').value = state.type; 
             document.getElementById('clientDropdown').value = state.id || "";
             
@@ -300,13 +331,30 @@
             document.getElementById('remainTxt').innerText = (t-p).toLocaleString() + ' د.ج';
         }
 
+        function saveToLocalStorage() {
+            localStorage.setItem('proElecDB_v28', JSON.stringify(db));
+            localStorage.setItem('proElecConfig_v28', JSON.stringify(config));
+        }
+
+        // Updated Save Logic (Local + Cloud Trigger)
+        function saveData() { 
+            if(!state.id) return alert('اختر العميل'); 
+            state.type=document.getElementById('docType').value; 
+            let i=db.findIndex(c=>c.id==state.id); 
+            if(i!==-1) db[i]=state; 
+            saveToLocalStorage(); 
+            // Trigger auto-save to cloud silently if possible, or warn user
+            if(window.dbFirestore) window.manualSave(); 
+            else alert('تم الحفظ محلياً (غير متصل بالسحابة)');
+        }
+
         function editItem(i) { let np=prompt('تعديل السعر', state.items[i].price); if(np!==null){ let nq=prompt('تعديل الكمية', state.items[i].qty); if(nq!==null){ state.items[i].price=parseFloat(np); state.items[i].qty=parseFloat(nq); render(); }}}
         function editPayment(i) { let na=prompt("تعديل المبلغ:", state.payments[i].amount); if(na!==null){ let nd=prompt("تعديل التاريخ:", state.payments[i].date); if(nd!==null){ state.payments[i].amount=parseFloat(na); state.payments[i].date=nd; render(); }}}
         
         function openAdminPanel() { document.getElementById('adminPinInput').value=''; document.getElementById('pinModal').style.display='flex'; document.getElementById('adminPinInput').focus(); }
         function checkAdminPin() { if(document.getElementById('adminPinInput').value===config.pin){ closeModal('pinModal'); openSettings(); } else alert('رمز خاطئ'); }
         function openSettings() { document.getElementById('companySettingsModal').style.display='flex'; document.getElementById('confAppName').value=config.name; document.getElementById('confAppDesc').value=config.desc; document.getElementById('confAppPhone').value=config.phone; document.getElementById('confAppAddr').value=config.addr; }
-        function saveCompanyConfig() { config.name=document.getElementById('confAppName').value||"ProElec"; config.desc=document.getElementById('confAppDesc').value; config.phone=document.getElementById('confAppPhone').value; config.addr=document.getElementById('confAppAddr').value; let np=document.getElementById('confAppPin').value; if(np&&np.length>=4) config.pin=np; localStorage.setItem('proElecConfig_v28', JSON.stringify(config)); applyConfigToUI(); closeModal('companySettingsModal'); }
+        function saveCompanyConfig() { config.name=document.getElementById('confAppName').value||"ProElec"; config.desc=document.getElementById('confAppDesc').value; config.phone=document.getElementById('confAppPhone').value; config.addr=document.getElementById('confAppAddr').value; let np=document.getElementById('confAppPin').value; if(np&&np.length>=4) config.pin=np; saveToLocalStorage(); applyConfigToUI(); closeModal('companySettingsModal'); }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
         
         function renderQuickButtons() { let g=document.getElementById('quickButtonsGrid'); g.innerHTML=''; for(let k in defaultPrices){ g.innerHTML+=`<button class="neu-btn" onclick="addQuickItem('${k}')"><i class="fas ${defaultPrices[k].icon}"></i><span>${defaultPrices[k].name}</span><span class="price-tag">${defaultPrices[k].price} د.ج</span></button>`; } }
@@ -318,19 +366,14 @@
         function addManualItem() { let n=document.getElementById('manualName').value; let p=parseFloat(document.getElementById('manualPrice').value); if(n&&p){ addItem(n,p); document.getElementById('manualName').value=''; document.getElementById('manualPrice').value=''; } }
         
         function toggleNewClient() { let s=document.getElementById('newClientSection'); s.style.display=s.style.display==='none'?'flex':'none'; if(s.style.display==='flex') document.getElementById('newClientName').focus(); }
-        function saveNewClient() { let n=document.getElementById('newClientName').value; if(!n) return; let nc={id:Date.now(), name:n, type:'فاتورة نهائية', items:[], payments:[]}; db.push(nc); saveDB(); updateDropdown(); document.getElementById('clientDropdown').value=nc.id; loadClient(nc.id); document.getElementById('newClientName').value=''; toggleNewClient(); }
+        function saveNewClient() { let n=document.getElementById('newClientName').value; if(!n) return; let nc={id:Date.now(), name:n, type:'فاتورة نهائية', items:[], payments:[]}; db.push(nc); saveToLocalStorage(); updateDropdown(); document.getElementById('clientDropdown').value=nc.id; loadClient(nc.id); document.getElementById('newClientName').value=''; toggleNewClient(); }
         function loadClient(id) { if(!id){ state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); return; } let f=db.find(c=>c.id==id); if(f){ state=JSON.parse(JSON.stringify(f)); render(); } }
-        function saveData() { if(!state.id) return alert('اختر العميل'); state.type=document.getElementById('docType').value; let i=db.findIndex(c=>c.id==state.id); if(i!==-1) db[i]=state; saveDB(); alert('تم الحفظ'); }
-        function deleteClient() { if(confirm('حذف؟')) { db=db.filter(c=>c.id!==state.id); saveDB(); updateDropdown(); state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); } }
+        function deleteClient() { if(confirm('حذف؟')) { db=db.filter(c=>c.id!==state.id); saveToLocalStorage(); updateDropdown(); state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); } }
         function addItem(n,p) { let ex=state.items.find(x=>x.name===n); if(ex) ex.qty++; else state.items.push({name:n,price:p,qty:1}); render(); }
         function addPayment() { let a=parseFloat(document.getElementById('payAmount').value); let d=document.getElementById('payDate').value; if(a){ state.payments.push({amount:a,date:d}); document.getElementById('payAmount').value=''; render(); } }
         function delItem(i){ state.items.splice(i,1); render(); } function delPay(i){ state.payments.splice(i,1); render(); }
         function updateDropdown() { let s=document.getElementById('clientDropdown'); let h='<option value="">-- اختر عميلاً --</option>'; db.forEach(c=>h+=`<option value="${c.id}">${c.name}</option>`); s.innerHTML=h; }
-        function saveDB() { localStorage.setItem('proElecDB_v28', JSON.stringify(db)); }
         function shareWhatsapp() { if (!state.name) return alert('اختر عميلاً'); let t = `*فاتورة: ${state.name}*\nمجموع: ${document.getElementById('totalTxt').innerText}\nباقي: ${document.getElementById('remainTxt').innerText}`; if(config.phone) t+=`\nتواصل: ${config.phone}`; window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank'); }
-
-        function exportData() { try { const d = { version: "v31", timestamp: new Date().toISOString(), db: db || [], config: config || {}, prices: JSON.parse(localStorage.getItem('proElecPrices_v28')) || {} }; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], {type: "application/json"})); a.download = `ProElec_Backup_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); } catch(e) { alert("خطأ نسخ: " + e.message); } }
-        function importData(inp) { const f = inp.files[0]; if(!f) return; const r = new FileReader(); r.onload = e => { try { const d = JSON.parse(e.target.result); if(confirm('استبدال البيانات؟')) { if(Array.isArray(d)) db = d; else if(d.db) { db = d.db; if(d.config) { config = d.config; localStorage.setItem('proElecConfig_v28', JSON.stringify(config)); } if(d.prices) localStorage.setItem('proElecPrices_v28', JSON.stringify(d.prices)); } saveDB(); location.reload(); } } catch(err) { alert('ملف تالف'); } }; r.readAsText(f); inp.value = ''; }
 
         function forcePrint() {
             if(!state.name) return alert('اختر عميلاً');
