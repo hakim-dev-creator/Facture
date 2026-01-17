@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProElec V33 - Cloud Edition</title>
+    <title>ProElec V35 - Smart Check</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -58,9 +58,17 @@
         .fab-action { flex: 1; background: #1f2937; color: white !important; }
         .fab-whatsapp { flex: 1; color: var(--whatsapp) !important; font-size: 1.5rem; }
 
-        /* Modals */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .modal-content { background: #e0e5ec; padding: 25px; border-radius: 25px; width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 85vh; overflow-y: auto; }
+        /* Modern Modals Styling */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.2s ease-out; }
+        .modal-content { background: #e0e5ec; padding: 25px; border-radius: 25px; width: 90%; max-width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 85vh; overflow-y: auto; position: relative; border: 1px solid rgba(255,255,255,0.5); animation: scaleUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal-header { text-align: center; margin-bottom: 20px; }
+        .modal-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--bg); box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--primary); font-size: 1.5rem; }
+        .modal-title { font-size: 1.2rem; font-weight: 800; color: var(--text-main); }
+        .modal-desc { font-size: 0.9rem; color: #666; margin-top: 5px; }
+        
         .setting-group { margin-bottom: 15px; }
         .setting-group label { display: block; margin-bottom: 5px; color: var(--primary); font-weight: bold; font-size: 0.9rem; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -98,15 +106,15 @@
         <div class="neu-box">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <h3 style="color:var(--text-main)"><i class="fas fa-user-circle"></i> العميل</h3>
-                <button class="neu-btn btn-icon-only" onclick="toggleNewClient()"><i class="fas fa-plus"></i></button>
+                <div style="display:flex; gap:10px;">
+                    <button class="neu-btn btn-icon-only" onclick="openClientModal(false)" title="عميل جديد"><i class="fas fa-plus"></i></button>
+                    <button class="neu-btn btn-icon-only" onclick="openClientModal(true)" title="تعديل الاسم" style="color:var(--warning)"><i class="fas fa-pen"></i></button>
+                    <button class="neu-btn btn-icon-only" onclick="openDeleteModal()" title="حذف العميل" style="color:var(--danger)"><i class="fas fa-trash"></i></button>
+                </div>
             </div>
-            <div id="dropdownSection">
-                <select id="clientDropdown" class="neu-select" onchange="loadClient(this.value)"><option value="">-- اختر عميلاً --</option></select>
-            </div>
-            <div id="newClientSection" style="display:none; gap:10px;">
-                <input type="text" id="newClientName" class="neu-input" placeholder="اسم العميل..." style="margin:0">
-                <button class="neu-btn btn-green" style="width:60px" onclick="saveNewClient()"><i class="fas fa-check"></i></button>
-            </div>
+            
+            <select id="clientDropdown" class="neu-select" onchange="loadClient(this.value)"><option value="">-- اختر عميلاً --</option></select>
+            
             <select id="docType" class="neu-input" style="margin-top:10px;"><option>فاتورة نهائية</option><option>عرض سعر (Devis)</option></select>
         </div>
 
@@ -158,9 +166,40 @@
 
         <div class="fab-bar">
             <button class="neu-btn fab-main" onclick="manualSave()"><i class="fas fa-cloud-upload-alt"></i> حفظ في السحابة</button>
-            <button class="neu-btn fab-action btn-red" onclick="deleteClient()"><i class="fas fa-trash-alt"></i></button>
             <button class="neu-btn fab-whatsapp" onclick="shareWhatsapp()"><i class="fab fa-whatsapp"></i></button>
             <button class="neu-btn fab-action" onclick="forcePrint()"><i class="fas fa-print"></i></button>
+        </div>
+    </div>
+
+    <div id="clientModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon"><i class="fas fa-user-edit"></i></div>
+                <h3 class="modal-title" id="clientModalTitle">بيانات العميل</h3>
+                <p class="modal-desc">أدخل اسم المشروع أو العميل الجديد</p>
+            </div>
+            <div class="setting-group">
+                <input type="text" id="modalClientName" class="neu-input" placeholder="اسم العميل..." style="text-align:center;">
+                <input type="hidden" id="isEditMode">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="neu-btn btn-green" onclick="confirmSaveClient()" style="flex:2">حفظ</button>
+                <button class="neu-btn btn-red" onclick="closeModal('clientModal')" style="flex:1">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon" style="color:var(--danger)"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 class="modal-title" style="color:var(--danger)">حذف العميل؟</h3>
+                <p class="modal-desc">هل أنت متأكد من حذف هذا العميل وجميع بياناته؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="neu-btn btn-red" onclick="confirmDeleteClient()" style="flex:2">نعم، احذف</button>
+                <button class="neu-btn" onclick="closeModal('deleteModal')" style="flex:1">تراجع</button>
+            </div>
         </div>
     </div>
 
@@ -227,12 +266,11 @@
         }
     </script>
     <script>
-        // Main Application Logic (V33)
+        // Main Application Logic (V35)
         let db = [], config = { name: "ProElec", pin: "0000" }, savedPrices, state;
         let defaultPrices = { socket: { name: 'تركيب مأخذ', price: 700, icon: 'fa-plug' }, light: { name: 'نقطة إنارة', price: 800, icon: 'fa-lightbulb' }, cable: { name: 'سحب كابلات', price: 150, icon: 'fa-bezier-curve' }, panel: { name: 'طبلون', price: 5000, icon: 'fa-server' }, drill: { name: 'حفر العلب', price: 150, icon: 'fa-hammer' }, breaker: { name: 'تركيب قاطعة', price: 350, icon: 'fa-toggle-on' } };
 
         window.onload = () => {
-            // Load local data first for speed
             loadLocalData();
             document.getElementById('payDate').valueAsDate = new Date();
             renderQuickButtons();
@@ -257,34 +295,24 @@
         window.loadFromCloud = async function() {
             if(!window.dbFirestore) return;
             try {
-                // قراءة ملف البيانات الرئيسي
                 const docRef = window.doc(window.dbFirestore, "app_data", "backup");
                 const docSnap = await window.getDoc(docRef);
                 
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data();
-                    console.log("☁️ Data loaded from cloud");
-                    
-                    // تحديث البيانات المحلية
+                    console.log("☁️ Data loaded");
                     db = cloudData.db || [];
                     config = cloudData.config || config;
-                    // حفظها محلياً أيضاً
                     saveToLocalStorage();
-                    
-                    // تحديث الواجهة
                     applyConfigToUI();
                     updateDropdown();
                     if(state.id) {
-                        // تحديث حالة العميل الحالي إذا تغيرت في السحابة
                         let freshClient = db.find(c => c.id == state.id);
                         if(freshClient) { state = JSON.parse(JSON.stringify(freshClient)); render(); }
                     }
-                    
                     alert("تم مزامنة البيانات من السحابة بنجاح ✅");
                 }
-            } catch(e) {
-                console.error("Cloud Load Error", e);
-            }
+            } catch(e) { console.error("Cloud Load Error", e); }
         };
 
         window.manualSave = async function() {
@@ -292,22 +320,11 @@
             const btn = document.querySelector('.fab-main');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> جاري الرفع...';
-            
             try {
-                // حفظ البيانات الشاملة
-                const dataToSave = {
-                    db: db,
-                    config: config,
-                    timestamp: new Date().toISOString()
-                };
-                
+                const dataToSave = { db: db, config: config, timestamp: new Date().toISOString() };
                 await window.setDoc(window.doc(window.dbFirestore, "app_data", "backup"), dataToSave);
                 alert("تم الحفظ في السحابة بأمان ☁️✅");
-            } catch(e) {
-                alert("فشل الحفظ: " + e.message);
-            } finally {
-                btn.innerHTML = originalText;
-            }
+            } catch(e) { alert("فشل الحفظ: " + e.message); } finally { btn.innerHTML = originalText; }
         };
 
         // --- Core Functions ---
@@ -336,18 +353,83 @@
             localStorage.setItem('proElecConfig_v28', JSON.stringify(config));
         }
 
-        // Updated Save Logic (Local + Cloud Trigger)
         function saveData() { 
             if(!state.id) return alert('اختر العميل'); 
             state.type=document.getElementById('docType').value; 
             let i=db.findIndex(c=>c.id==state.id); 
             if(i!==-1) db[i]=state; 
             saveToLocalStorage(); 
-            // Trigger auto-save to cloud silently if possible, or warn user
             if(window.dbFirestore) window.manualSave(); 
-            else alert('تم الحفظ محلياً (غير متصل بالسحابة)');
         }
 
+        // --- New Modal System Logic ---
+        function openClientModal(isEdit) {
+            document.getElementById('isEditMode').value = isEdit ? 'true' : 'false';
+            document.getElementById('clientModal').style.display = 'flex';
+            
+            if(isEdit) {
+                if(!state.id) { alert("اختر عميلاً أولاً"); closeModal('clientModal'); return; }
+                document.getElementById('clientModalTitle').innerText = 'تعديل اسم العميل';
+                document.getElementById('modalClientName').value = state.name;
+            } else {
+                document.getElementById('clientModalTitle').innerText = 'عميل جديد';
+                document.getElementById('modalClientName').value = '';
+            }
+            document.getElementById('modalClientName').focus();
+        }
+
+        function confirmSaveClient() {
+            const name = document.getElementById('modalClientName').value.trim();
+            const isEdit = document.getElementById('isEditMode').value === 'true';
+            
+            if(!name) return alert("الرجاء إدخال الاسم");
+
+            // 🔥 Check for Duplicates
+            // If editing, check if name exists in OTHER clients (not self)
+            // If new, check if name exists in ALL clients
+            const exists = db.some(c => c.name.trim() === name && (!isEdit || c.id !== state.id));
+            if (exists) {
+                alert("⚠️ تنبيه: اسم العميل هذا موجود مسبقاً!");
+                return;
+            }
+
+            if(isEdit) {
+                // تعديل الاسم
+                state.name = name;
+                let idx = db.findIndex(c => c.id == state.id);
+                if(idx !== -1) db[idx].name = name;
+                saveData(); // حفظ سحابي
+                updateDropdown();
+                alert("تم تغيير الاسم بنجاح");
+            } else {
+                // إضافة جديد
+                let nc={id:Date.now(), name:name, type:'فاتورة نهائية', items:[], payments:[]};
+                db.push(nc);
+                saveToLocalStorage();
+                updateDropdown();
+                document.getElementById('clientDropdown').value = nc.id;
+                loadClient(nc.id);
+                saveData(); // حفظ سحابي
+            }
+            closeModal('clientModal');
+        }
+
+        function openDeleteModal() {
+            if(!state.id) return alert("اختر عميلاً أولاً");
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function confirmDeleteClient() {
+            db = db.filter(c => c.id !== state.id);
+            saveToLocalStorage();
+            updateDropdown();
+            state = {id:null, name:'', type:'فاتورة نهائية', items:[], payments:[]};
+            render();
+            if(window.dbFirestore) window.manualSave();
+            closeModal('deleteModal');
+        }
+
+        // Standard Edit Functions (Items/Payments)
         function editItem(i) { let np=prompt('تعديل السعر', state.items[i].price); if(np!==null){ let nq=prompt('تعديل الكمية', state.items[i].qty); if(nq!==null){ state.items[i].price=parseFloat(np); state.items[i].qty=parseFloat(nq); render(); }}}
         function editPayment(i) { let na=prompt("تعديل المبلغ:", state.payments[i].amount); if(na!==null){ let nd=prompt("تعديل التاريخ:", state.payments[i].date); if(nd!==null){ state.payments[i].amount=parseFloat(na); state.payments[i].date=nd; render(); }}}
         
@@ -365,10 +447,8 @@
         function fillManualInput(s) { let v=s.value; if(!v) return; let [p, n]=v.split('|'); document.getElementById('manualName').value=n; document.getElementById('manualPrice').value=p; }
         function addManualItem() { let n=document.getElementById('manualName').value; let p=parseFloat(document.getElementById('manualPrice').value); if(n&&p){ addItem(n,p); document.getElementById('manualName').value=''; document.getElementById('manualPrice').value=''; } }
         
-        function toggleNewClient() { let s=document.getElementById('newClientSection'); s.style.display=s.style.display==='none'?'flex':'none'; if(s.style.display==='flex') document.getElementById('newClientName').focus(); }
-        function saveNewClient() { let n=document.getElementById('newClientName').value; if(!n) return; let nc={id:Date.now(), name:n, type:'فاتورة نهائية', items:[], payments:[]}; db.push(nc); saveToLocalStorage(); updateDropdown(); document.getElementById('clientDropdown').value=nc.id; loadClient(nc.id); document.getElementById('newClientName').value=''; toggleNewClient(); }
         function loadClient(id) { if(!id){ state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); return; } let f=db.find(c=>c.id==id); if(f){ state=JSON.parse(JSON.stringify(f)); render(); } }
-        function deleteClient() { if(confirm('حذف؟')) { db=db.filter(c=>c.id!==state.id); saveToLocalStorage(); updateDropdown(); state={id:null,name:'',type:'فاتورة نهائية',items:[],payments:[]}; render(); } }
+        
         function addItem(n,p) { let ex=state.items.find(x=>x.name===n); if(ex) ex.qty++; else state.items.push({name:n,price:p,qty:1}); render(); }
         function addPayment() { let a=parseFloat(document.getElementById('payAmount').value); let d=document.getElementById('payDate').value; if(a){ state.payments.push({amount:a,date:d}); document.getElementById('payAmount').value=''; render(); } }
         function delItem(i){ state.items.splice(i,1); render(); } function delPay(i){ state.payments.splice(i,1); render(); }
